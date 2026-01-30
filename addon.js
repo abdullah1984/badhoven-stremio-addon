@@ -1,22 +1,15 @@
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
 const providers = require('./providers');
 
-// Addon manifest
 const manifest = {
-    id: 'com.badhoven.stremio',
-    version: '2.1.0',
-    name: 'Badhoven Streams 🚀',
-    description: 'Stream movies and TV shows with direct m3u8/mp4 links - Fixed by Manus for badhoven',
-    
+    id: 'com.badhoven.stremio.fixed', // تغيير الـ ID لإجبار ستريمو على اعتباره إضافة جديدة
+    version: '3.0.0',
+    name: 'Badhoven DIRECT 🚀',
+    description: 'Direct m3u8/mp4 links ONLY - Fixed by Manus',
     resources: ['stream'],
     types: ['movie', 'series'],
     idPrefixes: ['tt'],
-    
     catalogs: [],
-    
-    logo: 'https://i.imgur.com/placeholder.png',
-    background: 'https://i.imgur.com/placeholder-bg.png',
-    
     behaviorHints: {
         configurable: false,
         configurationRequired: false
@@ -25,15 +18,14 @@ const manifest = {
 
 const builder = new addonBuilder(manifest);
 
-// Stream handler
 builder.defineStreamHandler(async function(args) {
-    console.log(`[Badhoven] Stream request: ${args.type} ${args.id}`);
+    console.log(`[Badhoven] NEW Request: ${args.type} ${args.id}`);
     
     try {
         const streams = [];
         const imdbId = args.id;
         
-        // Get streams from all providers
+        // جلب الروابط من المزودين المحدثين فقط
         const providerPromises = providers.map(provider => 
             provider.getStreams(imdbId, args.type, args.extra)
                 .catch(err => {
@@ -44,25 +36,22 @@ builder.defineStreamHandler(async function(args) {
         
         const results = await Promise.all(providerPromises);
         
-        // Flatten and combine all streams
         results.forEach(providerStreams => {
             if (Array.isArray(providerStreams)) {
-                streams.push(...providerStreams);
+                // تصفية الروابط لإبقاء الروابط المباشرة فقط (التي تحتوي على url)
+                // واستبعاد الروابط التي تحتوي على "embed" في الـ url
+                const directOnly = providerStreams.filter(s => 
+                    s.url && !s.url.includes('embed') && !s.url.includes('vidsrc.me') && !s.url.includes('vidsrc.to')
+                );
+                streams.push(...directOnly);
             }
         });
 
-        // ترتيب الروابط: الروابط المباشرة (التي تحتوي على url) أولاً، ثم الروابط الخارجية
-        const sortedStreams = streams.sort((a, b) => {
-            if (a.url && !b.url) return -1;
-            if (!a.url && b.url) return 1;
-            return 0;
-        });
-        
-        console.log(`[Badhoven] Found ${sortedStreams.length} streams for ${args.id}`);
+        console.log(`[Badhoven] Found ${streams.length} DIRECT streams`);
         
         return { 
-            streams: sortedStreams,
-            cacheMaxAge: 3600 // Cache for 1 hour
+            streams: streams,
+            cacheMaxAge: 0 // تعطيل الكاش تماماً للتجربة
         };
         
     } catch (error) {
@@ -71,26 +60,5 @@ builder.defineStreamHandler(async function(args) {
     }
 });
 
-// Start server
 const PORT = process.env.PORT || 7000;
-serveHTTP(builder.getInterface(), { 
-    port: PORT,
-    cacheMaxAge: 3600 
-});
-
-console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║   🎬 Badhoven Stremio Addon - FIXED                      ║
-║                                                           ║
-║   Server running on: http://127.0.0.1:${PORT}               ║
-║                                                           ║
-║   Install URL:                                            ║
-║   http://127.0.0.1:${PORT}/manifest.json                    ║
-║                                                           ║
-║   Status: Direct Links (m3u8/mp4) Enabled 🚀              ║
-║                                                           ║
-║   Made with ❤️ by badhoven                                ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
-`);
+serveHTTP(builder.getInterface(), { port: PORT });
