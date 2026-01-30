@@ -4,9 +4,9 @@ const providers = require('./providers');
 // Addon manifest
 const manifest = {
     id: 'com.badhoven.stremio',
-    version: '1.0.0',
-    name: 'Badhoven Streams',
-    description: 'Stream movies and TV shows from multiple sources - Created by badhoven',
+    version: '2.1.0',
+    name: 'Badhoven Streams 🚀',
+    description: 'Stream movies and TV shows with direct m3u8/mp4 links - Fixed by Manus for badhoven',
     
     resources: ['stream'],
     types: ['movie', 'series'],
@@ -31,8 +31,6 @@ builder.defineStreamHandler(async function(args) {
     
     try {
         const streams = [];
-        
-        // Extract TMDB ID from IMDB ID (format: tt1234567)
         const imdbId = args.id;
         
         // Get streams from all providers
@@ -52,10 +50,20 @@ builder.defineStreamHandler(async function(args) {
                 streams.push(...providerStreams);
             }
         });
+
+        // ترتيب الروابط: الروابط المباشرة (التي تحتوي على url) أولاً، ثم الروابط الخارجية
+        const sortedStreams = streams.sort((a, b) => {
+            if (a.url && !b.url) return -1;
+            if (!a.url && b.url) return 1;
+            return 0;
+        });
         
-        console.log(`[Badhoven] Found ${streams.length} streams for ${args.id}`);
+        console.log(`[Badhoven] Found ${sortedStreams.length} streams for ${args.id}`);
         
-        return { streams };
+        return { 
+            streams: sortedStreams,
+            cacheMaxAge: 3600 // Cache for 1 hour
+        };
         
     } catch (error) {
         console.error('[Badhoven] Handler error:', error);
@@ -67,25 +75,20 @@ builder.defineStreamHandler(async function(args) {
 const PORT = process.env.PORT || 7000;
 serveHTTP(builder.getInterface(), { 
     port: PORT,
-    cacheMaxAge: 3600 // Cache for 1 hour
+    cacheMaxAge: 3600 
 });
 
 console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🎬 Badhoven Stremio Addon                              ║
+║   🎬 Badhoven Stremio Addon - FIXED                      ║
 ║                                                           ║
 ║   Server running on: http://127.0.0.1:${PORT}               ║
 ║                                                           ║
 ║   Install URL:                                            ║
 ║   http://127.0.0.1:${PORT}/manifest.json                    ║
 ║                                                           ║
-║   Supported providers:                                    ║
-║   • VidSrc                                                ║
-║   • VidSrc.to                                             ║
-║   • 2Embed                                                ║
-║   • SuperEmbed                                            ║
-║   • MoviesAPI                                             ║
+║   Status: Direct Links (m3u8/mp4) Enabled 🚀              ║
 ║                                                           ║
 ║   Made with ❤️ by badhoven                                ║
 ║                                                           ║
