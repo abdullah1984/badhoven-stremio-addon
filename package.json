@@ -1,0 +1,28 @@
+{
+  "name": "badhoven-stremio-addon",
+  "version": "1.0.0",
+  "description": "Stremio addon by badhoven - Stream movies and TV shows from multiple sources",
+  "main": "addon.js",
+  "scripts": {
+    "start": "node addon.js",
+    "dev": "nodemon addon.js"
+  },
+  "keywords": [
+    "stremio",
+    "addon",
+    "streaming",
+    "movies",
+    "tv-shows",
+    "badhoven"
+  ],
+  "author": "badhoven",
+  "license": "MIT",
+  "dependencies": {
+    "stremio-addon-sdk": "^1.6.10",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
