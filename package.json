@@ -1,6 +1,6 @@
 {
   "name": "badhoven-stremio-addon",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Stremio addon by badhoven - Stream movies and TV shows from multiple sources",
   "main": "addon.js",
   "scripts": {
